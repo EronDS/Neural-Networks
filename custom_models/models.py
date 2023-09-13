@@ -3,20 +3,24 @@ from torch import nn
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 import warnings
+import numpy as np 
+
 warnings.filterwarnings('ignore')
 
-class Model(nn.Module, cnn = None, dense = None, c=3):
-    def __init__(self):
+class Model(nn.Module):
+    def __init__(self, c=3):
         super(Model, self).__init__()
         self.CNN = nn.Sequential(
-            nn.Conv2d(c, 32, kernel_size=3, stride=1, padding=1),  # Alterei o tamanho do kernel para 3
+            nn.Conv2d(c, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
 
-            nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1),  # Alterei o tamanho do kernel para 3
+            nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
         )
+        self.c = c
+
 
         # Calculate the input size for the first linear layer
         self.embedding = nn.Flatten()
@@ -32,7 +36,7 @@ class Model(nn.Module, cnn = None, dense = None, c=3):
 
     def _get_cnn_output_size(self):
         # Dummy input to compute the size of the output of the CNN layers
-        x = torch.randn(1, 3, 28, 28)
+        x = torch.randn(1, self.c, 28, 28)
         cnn_output = self.CNN(x)
         return cnn_output.view(x.size(0), -1).size(1)
 
@@ -42,8 +46,9 @@ class Model(nn.Module, cnn = None, dense = None, c=3):
         clf = self.classifier(embedding_output)  # Pass through the classifier
         return clf, embedding_output
 
+model = Model(c=2)
 
-def train_binary_clf(train_dl,model = Model(),criterion = torch.nn.BCELoss() ,optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)):
+def train_binary_clf(train_dl,val_dl,model = Model(),criterion = torch.nn.BCELoss() ,optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)):
 
     nb_epochs = 100
 
